@@ -54,6 +54,29 @@ def select_device(device='',batch_size=None):
     return torch.device('cuda:0'if cuda else 'cpu')
 ```
 
+### 基础网络结构快
+- Conv
+- Bottleneck
+- SPP
+- DWConv
+- Focus
+- BottleneckCSP
+- Concat
+- NMS
+
+#### hard-swish
+
+$$ f(x) = x \times sigmoid(\beta x) $$
+
+$$ f^{\prime}(x) = 1 \times sigmoid (\beta x) + x(\beta \times sigmoid(\beta x))$$
+
+- $\beta = 0$ 时 $f(x) = \frac{x}{2}$
+- $\beta$ 趋近于无穷 $\sigma(x) = (1 + \exp(-x))- \sigma(x) = (1 + \exp(-x))-1 $ 为 0 或 1 ，swish 变为 ReLU $f(x) = 2 \max(0,x)$
+所以Swish函数可以看做是介于线性函数与ReLU函数之间的平滑函数. beta是个常数或者可以训练的参数。其具有无上界有下界、平滑、非单调的特性。其在模型效果上优于ReLU。
+hard-Swish 介绍
+虽然 swish 非线性提高了精度，但是在嵌入式环境中，成本是非零的，因为在移动设备上计算 sigmoid 函数代价要大得多。
+
+$$h-swish(x) = x \frac{ReLU6(x+3)}{6}$$
 
 ### 运行时熔断 BN 和 Conv
 
