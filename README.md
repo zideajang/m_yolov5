@@ -1,6 +1,6 @@
 # m_yolov5
 yolov5 with pytorch
-
+最近接触 yolo 比较多，也看了点 yolo 源码，学到了很多，也想自己写一个 yolo 的实现。那么我们还是先从 yolo 网络结构实现开始入手。在开始之前，先看看结构图，然后按结构图来一步一步实现
 创建 models 模块，并创建 yolo.py 文件
 
 
@@ -124,3 +124,42 @@ $$h-swish(x) = x \frac{ReLU6(x+3)}{6}$$
 我们讨论如何通过合并冻结批处理规范化层和前面的卷积来简化网络结构。这是实践中常见的设置，值得研究。批处理规范化（通常缩写为BN）是现代神经网络中常用的一种方法，因为通常可以减少训练时间，并有可能提高泛化能力（但是，围绕它有一些争议：1，2）。
 
 [fusing-batchnorm-and-conv](https://nenadmarkus.com/p/fusing-batchnorm-and-conv/)
+
+### Focal loss
+对于 one-stage 检测经常会包含很多先验框，输入图片将划分为若干个网格，每个网格又包含若干个先验框。这样就是使得 one-stage 包含很多先验框，SSD 就包含 8000 多个先验框，其中只有几个框中包含目标，这样就导致正负样本不均衡的问题。为了解决这个问题，而在 Focal loss 中提出通过权重方式来控制正负样本的权重，以及控制容易分类和难分类样本的权重。
+#### 控制正负样本的权重
+介绍一下交叉熵
+$$cross\,entropy = \begin{cases}
+    -\log(p) & if\, y = 1\\
+    -\log(1-p) & otherwise
+\end{cases}$$
+可以用 pt 简化交叉熵
+$$P_t = \begin{cases}
+    p & if\, y = 1\\
+    1-p & otherwise
+\end{cases}$$
+
+$$cross\,entropy(p,y) = cross\,entropy(P_t) = -\log(P_t)$$
+
+想要降低负样本的影响，可以在常规的损失函数前增加一个系数$\alpha_t$ 与$P_t$ 类似，当标签 $y=1$ 的时候，$\alpha_t = \alpha$ 而当$y=0$ 时候$\alpha_t = 1 - \alpha$ $\alpha$ 的范围也是 0 到 1 之间的数。此时便可以通过设置 $\alpha$ 实现控制正负样本对 loss 的贡献
+
+$$CE(P_t) = -\alpha_t \log(P_t)$$
+
+$$\alpha_t = \begin{cases}
+    \alpha & if \, y=1\\
+    1- \alpha & otherwise
+\end{cases}$$
+
+$$CE(p,y,\alpha) = \begin{cases}
+    - \log(p) * \alpha & if\, y= 1\\
+    - \log(1 - p) * (1 - \alpha) & if\, y= 0\\
+\end{cases}$$
+
+#### 控制容易分类和难分类样本的权重
+$$FL(P_t) = -(1 - P_t)^{\gamma} \log(P_t)$$
+- $(1- P_t)^{\gamma}$ 称为调制系数
+- 当$P_t$ 趋近 0 的时候，调制系数趋近 1，对于总的 loss 的贡献很大，当$P_t$趋近1的时候，调制系数趋近 0 也就是对于总的 loss 的贡献很小
+- 当$\gamma = 0$ 的时候，focal loss 就是传统的交叉熵损失，可以通过调整$\gamma$实现调制系数的改变
+
+#### 两个权重控制方法合并
+$$FL(P_t) = -\alpha_t(1-P_t)^{\gamma} \log (P_t)$$

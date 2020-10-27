@@ -42,10 +42,18 @@ class Model(nn.Module):
         pass
     def info(self):#输出模型信息
         pass
+"""
+d model_dict
+ch channel
+"""
+def parse_model(d,ch):
+    print('\n%3s%18s%3s%10s  %-40s%-30s' % ('', 'from', 'n', 'params', 'module', 'arguments'))
 if __name__ == "__main__":
     print("hello yolov5...")
-
-    model = Model()
+    with open("yolov5s.yaml") as f:
+        cfg = yaml.load(f, Loader=yaml.FullLoader) 
+        parse_model(cfg,[3])
+    # model = Model()
 
     # device = select_device(cfg)
     # model = Model(cfg).to(device)
