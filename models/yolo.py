@@ -5,11 +5,28 @@ import logging
 
 import torch
 import torch.nn as nn
+import yaml
+from pathlib import Path
 
 class Model(nn.Module):
-
-    def __init__(self):
+    """
+    ch=3
+    nc(class number)
+    """
+    def __init__(self,cfg='yolov5s.yaml', ch=3, nc=None):
         super(Model,self).__init__()
+        # 读取配置文件
+        if isinstance(cfg, dict):
+            self.yaml = cfg
+        else:
+            self.yaml_file = Path(cfg).name
+            with open(cfg) as f:
+                self.yaml = yaml.load(f, Loader=yaml.FullLoader) 
+
+        if nc and nc != self.yaml['nc']:
+            print('Overriding model.yaml nc=%g with nc=%g' % (self.yaml['nc'], nc))
+            self.yaml['nc'] = nc  # override yaml value
+
     
     def forward(self,x):
         pass
@@ -28,7 +45,7 @@ class Model(nn.Module):
 if __name__ == "__main__":
     print("hello yolov5...")
 
-
+    model = Model()
 
     # device = select_device(cfg)
     # model = Model(cfg).to(device)

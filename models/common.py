@@ -87,6 +87,21 @@ class BottleneckCSP(nn.Module):
         y2 = self.cv2(x)
         return self.cv4(self.act(self.bn(torch.cat((y1,y2),dim=1))))
 
+class SPP(nn.Module):
+    # Spatial pyramid pooling layer used in YOLOv3-SPP
+    # 特征金字塔结构
+    def __init__(self, c1, c2, k=(5, 9, 13)):
+        super(SPP, self).__init__()
+        c_ = c1 // 2  # hidden channels
+        self.cv1 = Conv(c1, c_, 1, 1)
+        # 
+        self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1)
+        self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
+
+    def forward(self, x):
+        x = self.cv1(x)
+        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+
 if __name__ == "__main__":
 
     # test conv
@@ -96,9 +111,14 @@ if __name__ == "__main__":
     # print(res.shape)
 
     # test bottleneck
-    conv = Bottleneck(16,16)
+    # conv = Bottleneck(16,16)
+    # img = torch.randint(0,255,(1,16,416,416),dtype=torch.float32)
+    # res = conv(img)
+    # print(res.shape)
+    
+    # test BottleneckCSP
+    conv = BottleneckCSP(16,16,n=3)
     img = torch.randint(0,255,(1,16,416,416),dtype=torch.float32)
     res = conv(img)
     print(res.shape)
-    
     
