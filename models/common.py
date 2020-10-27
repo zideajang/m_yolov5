@@ -60,7 +60,32 @@ class Bottleneck(nn.Module):
         # 
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
-# class BottleneckCSP(nn.Module):
+"""
+n(number)
+"""
+class BottleneckCSP(nn.Module):
+    def __init__(self,c1,c2,n=1,shortcut=True,g=1,e=0.5):
+        super(BottleneckCSP,self).__init__()
+        c_ = int(c2 * e)
+        # input [16,416,416] output [8,416,416]
+        self.cv1 = Conv(c1,c_,1,1)
+        # input [16,416,416] output [8,416,416]
+        self.cv2 = nn.Conv2d(c1,c_,1,1,bias=False)
+        # input [8,416,416] output [8,416,416]
+        self.cv3 = nn.Conv2d(c_,c_,1,1,bias=False)
+        # input [16,416,416] output [16,416,416]
+        self.cv4 = Conv(2*c_,c2,1,1)
+        # 16
+        self.bn = nn.BatchNorm2d(2*c_)
+
+        self.act = nn.LeakyReLU(0.1,inplace=True)
+        self.m = nn.Sequential(*[Bottleneck(c_,c_,shortcut,g,e=1.0) for _ in range(n)])
+
+
+    def forward(self,x):
+        y1 = self.cv3(self.m(self.cv1(x)))
+        y2 = self.cv2(x)
+        return self.cv4(self.act(self.bn(torch.cat((y1,y2),dim=1))))
 
 if __name__ == "__main__":
 
