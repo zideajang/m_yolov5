@@ -56,6 +56,9 @@ def select_device(device='',batch_size=None):
 
 ### 基础网络结构快
 - Conv
+
+<img src="./images/cbs_block.png"/>
+
 ```python
 class Conv(nn.Module):
 
