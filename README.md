@@ -1,3 +1,31 @@
+- 服务进行拆分
+- 将 AI 服务写成 RPC 服务供调用
+- 将 RPC 封装 docker 镜像
+
+# YOLOv5
+
+YOLO 系列一路地走来，并且在竞争激烈的目标检测领域能够有一席之地，必定有其存在。尤其在前阶段， YOLOv4 和 YOLOv5 到底谁说当下王者，网络上作者之间也进行进行激励争论。
+
+YOLO 不断更新，并且吸收其他框架的优点，完成自身不断提升。尤其最近推出的 YOLOv5 在不失初心(小巧轻快)前提下，大大提高了性能。
+
+<img src="./images/big_dish.jpg">
+
+在 YOLOv5
+
+| 名称  | 说明  |
+|---|---|
+| Backbone  | 在不同图像细粒度上聚合并形成图像特征的卷积神经网络  |
+| Neck  | 一系列混合和组合图像，将图像特征传递到预测层  |
+| Head  | 对图像特征进行预测，生成边界框和预测类别  |
+
+|  参数名称 |  参数值 |
+|---|---|
+|  depth multiple | 0.33  |
+|  width multiple | 0.5  |
+| from | -1 表示从上一层获得输入 -2 表示从上两层获得输入  |
+| number | 1 表示只有一个， 3 表示有 3 个相同模块  |
+
+
 # m_yolov5
 yolov5 with pytorch
 最近接触 yolo 比较多，也看了点 yolo 源码，学到了很多，也想自己写一个 yolo 的实现。那么我们还是先从 yolo 网络结构实现开始入手。在开始之前，先看看结构图，然后按结构图来一步一步实现
@@ -54,10 +82,12 @@ def select_device(device='',batch_size=None):
     return torch.device('cuda:0'if cuda else 'cpu')
 ```
 
-### 基础网络结构快
-- Conv
+## 基础网络结构快
+### Conv
 
-<img src="./images/cbs_block.png"/>
+<img src="./images/cbs_block.png" width="50%"/>
+
+这个结构比较基础，传统搭配，卷积层、BN 层，唯一我们需要注意就是激活层没有使用 ReLU 而是使用了比较新的激活函数 Hard
 
 ```python
 class Conv(nn.Module):
@@ -101,12 +131,20 @@ class Bottleneck(nn.Module):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 ```
 
-- SPP
-- DWConv
-- Focus
+
+
+
+
+
+### DWConv
+深度可分离卷积，这个我分享过
+### Focus
+将图像相邻的四个位置进行堆叠，聚焦 wh 维度信息到 c 通道空间，每个点的提高感受野，并减少原始信息的丢失，有点类似于进行 kernal size = 2 ，stride = 2 的卷积操作。
 - BottleneckCSP
 - Concat
 - NMS
+### PANET
+模型使用 FPN 作为 NECK，随后更新为 PANET 。PANET 基于 Mask RCNN 和 FPN 框架，加强了信息传播，这样做具有准确保留空间信息的能力。这有助于对像素进行适当的定位以形成 mask
 
 #### hard-swish
 

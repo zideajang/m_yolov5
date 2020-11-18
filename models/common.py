@@ -100,7 +100,18 @@ class SPP(nn.Module):
 
     def forward(self, x):
         x = self.cv1(x)
-        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1)) 
+
+# 全局注意力
+# [3,416,416]
+class Focus(nn.Module):
+    # Focus wh information into c-space
+    def __init__(self,c1,c2,k=1,p=None,g=1,act=True):
+        # 3 * 64 = 
+        # 256 3 416//2 = 208
+        self.conv = Conv(c1 * 4,c2,k,s,p,g,act)
+    def forward(self,x):# (b,c,w,h) -> y(b,4c,w/2,h/2)
+        return self.conv(torch.cat(x[]))
 
 if __name__ == "__main__":
 
@@ -117,8 +128,12 @@ if __name__ == "__main__":
     # print(res.shape)
     
     # test BottleneckCSP
-    conv = BottleneckCSP(16,16,n=3)
-    img = torch.randint(0,255,(1,16,416,416),dtype=torch.float32)
-    res = conv(img)
-    print(res.shape)
+    # conv = BottleneckCSP(16,16,n=3)
+    # img = torch.randint(0,255,(1,16,416,416),dtype=torch.float32)
+    # res = conv(img)
+    # print(res.shape)
+
+    # Focus
+    
+
     
